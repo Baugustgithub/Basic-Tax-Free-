@@ -96,10 +96,19 @@ net_pay = gross_per_paycheck - pretax_deductions - fed_tax - va_tax - fica - med
 # --- Outputs ---
 st.subheader("Per-Paycheck Summary")
 st.write(f"**Gross Pay:** ${gross_per_paycheck:,.2f}")
-st.write(f"**Pension Contribution (5%):** ${pension_contrib:,.2f}")
-st.write(f"**Pre-Tax Deductions Total:** ${pretax_deductions:,.2f}")
-st.write(f"**Post-Tax Deductions Total:** ${posttax_deductions:,.2f}")
-st.write(f"**Taxable Income:** ${taxable_income:,.2f}")
+st.write(f"**Health Plan ({health_plan}):** -${health_plan_cost:,.2f}")
+st.write(f"**Pension Contribution (5%):** -${pension_contrib:,.2f}")
+st.write(f"**HSA Contribution:** -${per_check_hsa:,.2f}")
+if not is_roth_403b:
+    st.write(f"**403(b) Pre-Tax Contribution:** -${per_check_403b:,.2f}")
+else:
+    st.write(f"**403(b) Roth Contribution (post-tax):** -${per_check_403b:,.2f}")
+if not is_roth_457b:
+    st.write(f"**457(b) Pre-Tax Contribution:** -${per_check_457b:,.2f}")
+else:
+    st.write(f"**457(b) Roth Contribution (post-tax):** -${per_check_457b:,.2f}")
+st.write(f"**Total Pre-Tax Deductions:** ${pretax_deductions:,.2f}")
+st.write(f"**Post-Tax Deductions:** ${posttax_deductions:,.2f}")
 st.write(f"**Federal Tax:** ${fed_tax:,.2f}")
 st.write(f"**VA State Tax:** ${va_tax:,.2f}")
 st.write(f"**FICA:** ${fica:,.2f}")
@@ -108,8 +117,10 @@ st.success(f"**Estimated Net Pay (Per Paycheck):** ${net_pay:,.2f}")
 
 # --- Annual Summary ---
 total_net_pay = net_pay * paychecks_per_year
+monthly_take_home = total_net_pay / 12
 total_contributions = annual_403b + annual_457b + annual_hsa + (gross_annual_income * 0.05)
 
 st.subheader("Annual Summary")
-st.write(f"**Total Net Pay:** ${total_net_pay:,.2f}")
+st.write(f"**Total Net Pay (Annual):** ${total_net_pay:,.2f}")
+st.write(f"**Monthly Take-Home Pay (Estimate):** ${monthly_take_home:,.2f}")
 st.write(f"**Total Tax-Deferred Savings (403b, 457b, HSA, Pension):** ${total_contributions:,.2f}")
