@@ -1,7 +1,7 @@
 import streamlit as st
 
 # --- Title ---
-st.title("VCU Pay Stub Simulator: 2025")
+st.title("VCU Pay Stub Simulator: 2025 (Annual Contribution Version)")
 
 # --- User Inputs ---
 st.sidebar.header("Your Inputs")
@@ -34,41 +34,38 @@ health_plan_cost = {
     "Sentara HMO": 43.00
 }[health_plan]
 
-# Retirement Contributions
-contrib_403b = st.sidebar.number_input("403(b) Contribution per Paycheck", value=750)
-is_roth_403b = st.sidebar.checkbox("Is 403(b) Roth?", value=False)
+# Annual Contributions
+annual_403b = st.sidebar.number_input("Annual 403(b) Contribution", value=18000)
+is_roth_403b = st.sidebar.checkbox("403(b) as Roth?", value=False)
+annual_457b = st.sidebar.number_input("Annual 457(b) Contribution", value=18000)
+is_roth_457b = st.sidebar.checkbox("457(b) as Roth?", value=False)
+annual_hsa = st.sidebar.number_input("Annual HSA Contribution", value=0)
 
-contrib_457b = st.sidebar.number_input("457(b) Contribution per Paycheck", value=750)
-is_roth_457b = st.sidebar.checkbox("Is 457(b) Roth?", value=False)
+# Convert to per-paycheck
+per_check_403b = annual_403b / paychecks_per_year
+per_check_457b = annual_457b / paychecks_per_year
+per_check_hsa = annual_hsa / paychecks_per_year
 
-# HSA and pension
-contrib_hsa = st.sidebar.number_input("HSA Contribution per Paycheck", value=0)
-pension_pct = 5.0
-
-# --- Calculations ---
-pension_contrib = gross_per_paycheck * pension_pct / 100
-pretax_deductions = 0
+# --- Deductions ---
+pension_contrib = gross_per_paycheck * 0.05
+pretax_deductions = pension_contrib + per_check_hsa + health_plan_cost
 posttax_deductions = 0
 
-pretax_deductions += pension_contrib
-pretax_deductions += contrib_hsa
-pretax_deductions += health_plan_cost
-
 if not is_roth_403b:
-    pretax_deductions += contrib_403b
+    pretax_deductions += per_check_403b
 else:
-    posttax_deductions += contrib_403b
+    posttax_deductions += per_check_403b
 
 if not is_roth_457b:
-    pretax_deductions += contrib_457b
+    pretax_deductions += per_check_457b
 else:
-    posttax_deductions += contrib_457b
+    posttax_deductions += per_check_457b
 
 taxable_income = gross_per_paycheck - pretax_deductions
 fica = gross_per_paycheck * 0.062
 medicare = gross_per_paycheck * 0.0145
 
-# Federal tax brackets
+# --- Tax Estimations ---
 def estimate_federal_tax(income):
     brackets = [(0, 0.10), (11925, 0.12), (48475, 0.22), (103350, 0.24)]
     tax = 0
@@ -80,7 +77,6 @@ def estimate_federal_tax(income):
             prev = limit
     return tax
 
-# Virginia state tax brackets
 def estimate_va_tax(income):
     brackets = [(0, 0.02), (3000, 0.03), (5000, 0.05), (17000, 0.0575)]
     tax = 0
@@ -98,7 +94,7 @@ va_tax = estimate_va_tax(taxable_income)
 net_pay = gross_per_paycheck - pretax_deductions - fed_tax - va_tax - fica - medicare - posttax_deductions
 
 # --- Outputs ---
-st.subheader("Pay Stub Summary")
+st.subheader("Per-Paycheck Summary")
 st.write(f"**Gross Pay:** ${gross_per_paycheck:,.2f}")
 st.write(f"**Pension Contribution (5%):** ${pension_contrib:,.2f}")
 st.write(f"**Pre-Tax Deductions Total:** ${pretax_deductions:,.2f}")
@@ -109,3 +105,11 @@ st.write(f"**VA State Tax:** ${va_tax:,.2f}")
 st.write(f"**FICA:** ${fica:,.2f}")
 st.write(f"**Medicare:** ${medicare:,.2f}")
 st.success(f"**Estimated Net Pay (Per Paycheck):** ${net_pay:,.2f}")
+
+# --- Annual Summary ---
+total_net_pay = net_pay * paychecks_per_year
+total_contributions = annual_403b + annual_457b + annual_hsa + (gross_annual_income * 0.05)
+
+st.subheader("Annual Summary")
+st.write(f"**Total Net Pay:** ${total_net_pay:,.2f}")
+st.write(f"**Total Tax-Deferred Savings (403b, 457b, HSA, Pension):** ${total_contributions:,.2f}")
