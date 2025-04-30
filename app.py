@@ -1,7 +1,7 @@
 import streamlit as st
 
 # --- Title ---
-st.title("VCU Pay Stub Simulator: 2025 (Annual Contribution Version)")
+st.title("VCU Pay Stub Simulator: 2025 (Enhanced Version)")
 
 # --- User Inputs ---
 st.sidebar.header("Your Inputs")
@@ -41,6 +41,9 @@ annual_457b = st.sidebar.number_input("Annual 457(b) Contribution", value=18000)
 is_roth_457b = st.sidebar.checkbox("457(b) as Roth?", value=False)
 annual_hsa = st.sidebar.number_input("Annual HSA Contribution", value=0)
 
+# Other deductions
+parking_per_paycheck = st.sidebar.number_input("Parking Deduction (Per Paycheck)", value=46.00)
+
 # Convert to per-paycheck
 per_check_403b = annual_403b / paychecks_per_year
 per_check_457b = annual_457b / paychecks_per_year
@@ -48,7 +51,7 @@ per_check_hsa = annual_hsa / paychecks_per_year
 
 # --- Deductions ---
 pension_contrib = gross_per_paycheck * 0.05
-pretax_deductions = pension_contrib + per_check_hsa + health_plan_cost
+pretax_deductions = pension_contrib + per_check_hsa + health_plan_cost + parking_per_paycheck
 posttax_deductions = 0
 
 if not is_roth_403b:
@@ -97,6 +100,7 @@ net_pay = gross_per_paycheck - pretax_deductions - fed_tax - va_tax - fica - med
 st.subheader("Per-Paycheck Summary")
 st.write(f"**Gross Pay:** ${gross_per_paycheck:,.2f}")
 st.write(f"**Health Plan ({health_plan}):** -${health_plan_cost:,.2f}")
+st.write(f"**Parking Deduction:** -${parking_per_paycheck:,.2f}")
 st.write(f"**Pension Contribution (5%):** -${pension_contrib:,.2f}")
 st.write(f"**HSA Contribution:** -${per_check_hsa:,.2f}")
 if not is_roth_403b:
@@ -119,8 +123,10 @@ st.success(f"**Estimated Net Pay (Per Paycheck):** ${net_pay:,.2f}")
 total_net_pay = net_pay * paychecks_per_year
 monthly_take_home = total_net_pay / 12
 total_contributions = annual_403b + annual_457b + annual_hsa + (gross_annual_income * 0.05)
+effective_tax_rate = (fed_tax + va_tax + fica + medicare) * paychecks_per_year / gross_annual_income
 
 st.subheader("Annual Summary")
 st.write(f"**Total Net Pay (Annual):** ${total_net_pay:,.2f}")
 st.write(f"**Monthly Take-Home Pay (Estimate):** ${monthly_take_home:,.2f}")
 st.write(f"**Total Tax-Deferred Savings (403b, 457b, HSA, Pension):** ${total_contributions:,.2f}")
+st.write(f"**Effective Tax Rate:** {effective_tax_rate:.2%}")
